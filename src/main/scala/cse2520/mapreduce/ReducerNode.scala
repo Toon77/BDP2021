@@ -45,6 +45,7 @@ class ReducerIdle(context: ActorContext[ReducerCommand], node: ReducerNode)
   }
 
     // TODO
+    // Q 2.2
     private def aggregateDataSets(context: ActorContext[ReducerCommand], node: ReducerNode,
                                 dataSets: List[String], supervisor: ActorRef[ReducerEvent]): ReducerReduce = {
       context.log.info("Reducer {} is preparing aggregation of intermediate sets.", node.id)
@@ -57,6 +58,7 @@ class ReducerIdle(context: ActorContext[ReducerCommand], node: ReducerNode)
     .map(kvs => kvs._1 -> kvs._2.map(kv => kv._2).sorted)
 
       context.log.info("Reducer {} is starting reduce job ...", node.id)
+        context.self.tell(ProcessNextBatch)
     new ReducerReduce(context, node, AggregateSetState(aggregateMap.iterator, 0), new BufferedEmitter(), supervisor)
   }
 
