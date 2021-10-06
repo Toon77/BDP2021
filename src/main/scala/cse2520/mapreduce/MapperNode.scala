@@ -43,8 +43,8 @@ class MapperIdle(context: ActorContext[MapperCommand], node: MapperNode)
     case StartMapper(taskId, inputSet, supervisor) =>
       context.log.info("Starting a MapperNode")
       val iterator = node.fileSystem.readInputSet(inputSet).iterator
-      supervisor.tell(MapperStarted(this.node.id, taskId))
-      this.context.self.tell(ProcessNextBatch)
+      supervisor.tell(MapperStarted(node.id, taskId))
+      context.self.tell(ProcessNextBatch)
       new MapperInProgress(context, node, taskId, InputSetState(inputSet, iterator, 0), new PartitioningBufferedEmitter(node.partitions), supervisor)
     case _ => Behaviors.unhandled
   }
@@ -65,7 +65,7 @@ class MapperInProgress(context: ActorContext[MapperCommand], node: MapperNode, t
   context.log.info("Mapper {} is starting task {} ...", node.id, taskId)
 
   // TODO
-  // Q1.2
+  // Q 1.2
   override def onMessage(msg: MapperCommand): Behavior[MapperCommand] = msg match {
     case ProcessNextBatch if inputSet.lines.hasNext =>
       context.log.info("Mapper {} is processing task {} [line={}] ...", node.id, taskId, inputSet.index)
