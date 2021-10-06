@@ -36,9 +36,11 @@ class ReducerIdle(context: ActorContext[ReducerCommand], node: ReducerNode)
   import ReducerNode._
 
     // TODO
+    // Q 2.1
     override def onMessage(msg: ReducerCommand): Behavior[ReducerCommand] = msg match {
       case StartReducer(intSet, supervisor) =>
     context.log.info("Reducer {} is starting processing {} data sets...", node.id, intSet.size)
+          supervisor.tell(ReducerStarted(node.id))
       aggregateDataSets(context, node, intSet, supervisor)
   }
 
