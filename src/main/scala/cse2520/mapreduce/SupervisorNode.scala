@@ -54,6 +54,7 @@ class SupervisorDistributeTasks(context: ActorContext[SupervisorCommand], node: 
   var intermediatesByPartition = Map[Int, List[String]]()
 
   // TODO: Supervisor behavior in Q3.1 (5 pts)
+  context.self.tell(AssignNextTask)
 
   // TODO (for onMessage)
   override def onMessage(msg: SupervisorCommand): Behavior[SupervisorCommand] = msg match {
