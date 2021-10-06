@@ -74,23 +74,26 @@ class ReducerReduce(context: ActorContext[ReducerCommand], node: ReducerNode,
   extends AbstractBehavior[ReducerCommand](context: ActorContext[ReducerCommand]) {
 
     // TODO
+    // Q 2.3
     override def onMessage(msg: ReducerCommand): Behavior[ReducerCommand] = msg match {
       case ProcessNextBatch if setState.lines.hasNext =>
     context.log.info("Reducer {} is processing key [key={}] ...", node.id, setState.index)
         Try(setState.lines.next())
       .flatMap(kvs => node.reducer.reduce(emitter, kvs._1, kvs._2)) match {
           case Success(_) =>
-
+            context.self.tell(ProcessNextBatch)
           new ReducerReduce(context, node, setState.copy(index = setState.index + 1), emitter, supervisor)
         case Failure(e) =>
           context.log.info("Reducer {} error processing values.", node.id, e)
           throw e
       }
     // TODO
+      // Q 2.4
     case ProcessNextBatch =>
     context.log.info("Reducer {} has completed processing.", node.id)
         val dataSet = s"reducer-${node.id}.txt"
         node.fileSystem.writeOutputSet(dataSet, emitter.getData.map(s => s"${s._1}: ${s._2}"))
+        supervisor.tell(ReducerFinished(node.id, dataSet))
       new ReducerIdle(context, node)
   }
 }
