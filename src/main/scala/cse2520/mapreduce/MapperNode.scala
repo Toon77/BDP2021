@@ -4,6 +4,7 @@ import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior, PostStop, Signal}
 import cse2520.mapreduce.MapperNode.{InputSetState, MapperCommand, MapperEvent}
 
+import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
 object MapperNode {
@@ -42,7 +43,8 @@ class MapperIdle(context: ActorContext[MapperCommand], node: MapperNode)
     case StartMapper(taskId, inputSet, supervisor) =>
       context.log.info("Starting a MapperNode")
       val iterator = node.fileSystem.readInputSet(inputSet).iterator
-      supervisor.tell(new MapperStarted(this.node.id, taskId))
+      supervisor.tell(MapperStarted(this.node.id, taskId))
+      this.context.self.tell(ProcessNextBatch)
       new MapperInProgress(context, node, taskId, InputSetState(inputSet, iterator, 0), new PartitioningBufferedEmitter(node.partitions), supervisor)
     case _ => Behaviors.unhandled
   }
