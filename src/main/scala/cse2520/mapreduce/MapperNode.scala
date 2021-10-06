@@ -65,6 +65,7 @@ class MapperInProgress(context: ActorContext[MapperCommand], node: MapperNode, t
   context.log.info("Mapper {} is starting task {} ...", node.id, taskId)
 
   // TODO
+  // Q1.2
   override def onMessage(msg: MapperCommand): Behavior[MapperCommand] = msg match {
     case ProcessNextBatch if inputSet.lines.hasNext =>
       context.log.info("Mapper {} is processing task {} [line={}] ...", node.id, taskId, inputSet.index)
@@ -73,6 +74,7 @@ class MapperInProgress(context: ActorContext[MapperCommand], node: MapperNode, t
       val mapResult = node.mapper.map(emitter, inputSet.name, inputSet.lines.next())
       mapResult match {
         case Success(_) =>
+          context.self.tell(ProcessNextBatch)
           new MapperInProgress(context, node, taskId, inputSet.copy(index = inputSet.index + 1), emitter, supervisor)
         case Failure(e) =>
           context.log.info("Mapper {} error processing {}.", node.id, inputSet, e)
