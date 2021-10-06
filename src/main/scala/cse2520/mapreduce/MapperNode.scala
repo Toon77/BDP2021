@@ -82,6 +82,7 @@ class MapperInProgress(context: ActorContext[MapperCommand], node: MapperNode, t
           throw e
       }
     // TODO
+    // Q 1.3
     case ProcessNextBatch =>
       context.log.info("Mapper {} has completed processing task {}.", node.id, taskId)
 
@@ -97,6 +98,7 @@ class MapperInProgress(context: ActorContext[MapperCommand], node: MapperNode, t
         //  for each partition index, write data to corresponding file
         case (i, outFileName) => node.fileSystem.writeLocalSet(outFileName, emitter.getData(i))
       }
+      supervisor.tell(MapperFinished(node.id, taskId, intermediates))
       new MapperIdle(context, node)
     case _ => Behaviors.unhandled
   }
