@@ -37,9 +37,12 @@ class MapperIdle(context: ActorContext[MapperCommand], node: MapperNode)
   import MapperNode._
 
   // TODO
+  // Q 1.1
   override def onMessage(msg: MapperCommand): Behavior[MapperCommand] = msg match {
     case StartMapper(taskId, inputSet, supervisor) =>
+      context.log.info("Starting a MapperNode")
       val iterator = node.fileSystem.readInputSet(inputSet).iterator
+      supervisor.tell(new MapperStarted(this.node.id, taskId))
       new MapperInProgress(context, node, taskId, InputSetState(inputSet, iterator, 0), new PartitioningBufferedEmitter(node.partitions), supervisor)
     case _ => Behaviors.unhandled
   }
