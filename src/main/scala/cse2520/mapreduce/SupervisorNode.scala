@@ -1,7 +1,9 @@
 package cse2520.mapreduce
 
+import akka.actor.TypedActor.self
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
+import cse2520.mapreduce.MapperNode.StartMapper
 import cse2520.mapreduce.SupervisorNode.SupervisorCommand
 import cse2520.mapreduce.task.TaskDispatcher
 
@@ -57,10 +59,12 @@ class SupervisorDistributeTasks(context: ActorContext[SupervisorCommand], node: 
   context.self.tell(AssignNextTask)
 
   // TODO (for onMessage)
+  // Q 3.2
   override def onMessage(msg: SupervisorCommand): Behavior[SupervisorCommand] = msg match {
     case AssignNextTask if dispatcher.canDispatch =>
       context.log.info("Assign next input set to the next available mapper.")
       val task = dispatcher.dispatch.get
+      node.mappers(0).tell(StartMapper(task.id, node.inputSets(task.id), node.mapperAdapter))
 
       context.log.info("Sending task {} to mapper {}", task.id, task.processor)
       Behaviors.same
