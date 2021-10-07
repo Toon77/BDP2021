@@ -4,6 +4,7 @@ import akka.actor.TypedActor.self
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
 import cse2520.mapreduce.MapperNode.StartMapper
+import cse2520.mapreduce.ReducerNode.StartReducer
 import cse2520.mapreduce.SupervisorNode.SupervisorCommand
 import cse2520.mapreduce.task.TaskDispatcher
 
@@ -64,7 +65,7 @@ class SupervisorDistributeTasks(context: ActorContext[SupervisorCommand], node: 
     case AssignNextTask if dispatcher.canDispatch =>
       context.log.info("Assign next input set to the next available mapper.")
       val task = dispatcher.dispatch.get
-      node.mappers(0).tell(StartMapper(task.id, node.inputSets(task.id), node.mapperAdapter))
+      node.mappers(task.processor).tell(StartMapper(task.id, node.inputSets(task.id), node.mapperAdapter))
 
       context.log.info("Sending task {} to mapper {}", task.id, task.processor)
       Behaviors.same
@@ -72,13 +73,15 @@ class SupervisorDistributeTasks(context: ActorContext[SupervisorCommand], node: 
       context.log.info("All input sets are processed. Starting reduce operation...")
       intermediatesByPartition.foreach {
         // TODO
-        case (id, sets) => ???
+        // Q 3.4
+        case (id, sets) => node.reducers(id).tell(StartReducer(sets, node.reducerAdapter))
       }
       new SupervisorReduceIntermediates(context, node, intermediatesByPartition, Map())
     case AssignNextTask =>
       context.log.info("Waiting for all input sets to be processed. Remaining: {}...", dispatcher.busyProcessors)
       Behaviors.same
     // TODO
+    // Q 3.3
     case MapperResponse(event) =>
       event match {
         case MapperNode.MapperStarted(id, taskId) if dispatcher.taskInProgress(id, taskId) =>
@@ -92,6 +95,7 @@ class SupervisorDistributeTasks(context: ActorContext[SupervisorCommand], node: 
                 map + (pId -> (set +: map.getOrElse(pId, List())))
             }
           dispatcher.processFinished(id)
+          context.self.tell(AssignNextTask)
           Behaviors.same
         case _ => Behaviors.unhandled
       }
