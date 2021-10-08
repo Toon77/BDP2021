@@ -80,7 +80,7 @@ class SupervisorDistributeTasks(context: ActorContext[SupervisorCommand], node: 
       new SupervisorReduceIntermediates(context, node, intermediatesByPartition, Map())
     case AssignNextTask =>
       context.log.info("Waiting for all input sets to be processed. Remaining: {}...", dispatcher.busyProcessors)
-      this.context.self.tell(AssignNextTask)
+      //this.context.self.tell(AssignNextTask)
       Behaviors.same
     // TODO
     // Q 3.3
