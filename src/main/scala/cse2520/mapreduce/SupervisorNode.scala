@@ -66,6 +66,7 @@ class SupervisorDistributeTasks(context: ActorContext[SupervisorCommand], node: 
       context.log.info("Assign next input set to the next available mapper.")
       val task = dispatcher.dispatch.get
       node.mappers(task.processor).tell(StartMapper(task.id, node.inputSets(task.id), node.mapperAdapter))
+      this.context.self.tell(AssignNextTask)
 
       context.log.info("Sending task {} to mapper {}", task.id, task.processor)
       Behaviors.same
@@ -79,6 +80,7 @@ class SupervisorDistributeTasks(context: ActorContext[SupervisorCommand], node: 
       new SupervisorReduceIntermediates(context, node, intermediatesByPartition, Map())
     case AssignNextTask =>
       context.log.info("Waiting for all input sets to be processed. Remaining: {}...", dispatcher.busyProcessors)
+      this.context.self.tell(AssignNextTask)
       Behaviors.same
     // TODO
     // Q 3.3
