@@ -4,5 +4,4 @@
 .settings/
 .vscode/
 target/
-.gitignore
 .idea/
