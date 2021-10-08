@@ -1,0 +1,8 @@
+.classpath
+.metals/
+.project
+.settings/
+.vscode/
+target/
+.gitignore
+.idea/
