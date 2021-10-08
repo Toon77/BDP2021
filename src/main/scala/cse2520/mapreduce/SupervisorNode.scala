@@ -132,6 +132,7 @@ class SupervisorReduceIntermediates(context: ActorContext[SupervisorCommand], no
        context.log.info("Reducer {} encountered an error. Re-sending data sets...", id)
           if (intermediatesByPartition.contains(id)) {
             val dataSet = intermediatesByPartition(id)
+            this.node.reducers(id).tell(StartReducer(dataSet, node.reducerAdapter))
       }
       Behaviors.same
     case ReducerResponse(event) =>
