@@ -1,5 +1,0 @@
-Lorem ipsum dolor sit amet consectetur adipiscing elit Mauris accumsan blandit nisl sit amet venenatis.
-Sed elementum diam ac felis aliquet, sit amet vehicula tortor iaculis. Aliquam consequat ex placerat nunc
-blandit, ac vestibulum sapien vulputate. Etiam lorem lorem, tempor a nibh a, dignissim condimentum dui. Suspendisse
-quis neque eu massa mollis hendrerit. Vestibulum et quam sollicitudin, convallis purus eget, porttitor urna. Sed ac
-auctor sem. Duis eu turpis urna.
