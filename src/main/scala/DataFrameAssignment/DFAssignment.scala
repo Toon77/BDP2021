@@ -6,6 +6,7 @@ import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions._
 import utils.{Commit, File}
 
+import java.time.LocalDate
 import java.util.Date
 
 /**
@@ -103,7 +104,21 @@ object DFAssignment {
    * @return Dataframe containing 4 columns, Repository name, committer name, year
    *         and the number of commits for a given year.
    */
-  def assignment_3(commits: DataFrame): DataFrame = ???
+  val dateToYear = udf((s: String) => s.substring(0, 4))
+  val pattern = "((?<=\\/)[^\\/]+(?=\\/commits))".r()
+  val urlToRepo = udf((s: String) => pattern findFirstIn s)
+  def assignment_3(commits: DataFrame): DataFrame = {
+    commits.printSchema()
+    val tmp = commits
+        .select("url", "commit.committer.name" ,"commit.committer.date")
+        .withColumn("date", dateToYear(col("date")))
+        .withColumn("url", urlToRepo(col("url")))
+        .groupBy(col("url"), col("name"), col("date"))
+        .count()
+        .orderBy(col("count").desc)
+    println(tmp.head(30).mkString("Array(", ", ", ")"))
+    tmp
+  }
 
   /**
    *                                        Description
