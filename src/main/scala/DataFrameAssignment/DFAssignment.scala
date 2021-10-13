@@ -1,7 +1,7 @@
 package DataFrameAssignment
 
 import java.sql.Timestamp
-import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.{Column, DataFrame}
 import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions._
 import utils.{Commit, File}
@@ -74,7 +74,16 @@ object DFAssignment {
    *                SHAs.
    * @return DataFrame of commits from the requested authors including the commit SHA.
    */
-  def assignment_2(commits: DataFrame, committers: Seq[String]): DataFrame = ???
+    def filterUDF = udf((c: String, committers: Seq[String]) => committers.contains(c))
+
+  def assignment_2(commits: DataFrame, committers: Seq[String]): DataFrame = {
+    val tmp = commits
+        .select("commit.committer.name", "sha")
+        .filter(col("name").isInCollection(committers))
+        .sort("name")
+    println(tmp.head(5).mkString("Array(", ", ", ")"))
+    tmp
+  }
 
   /**
    *                                   Description
