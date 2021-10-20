@@ -2,10 +2,11 @@ package DataFrameAssignment
 
 import java.sql.Timestamp
 import org.apache.spark.sql.{Column, DataFrame}
-import org.apache.spark.sql.expressions.Window
+import org.apache.spark.sql.expressions.{UserDefinedFunction, Window}
 import org.apache.spark.sql.functions._
 import utils.{Commit, File}
 
+import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.util.Date
 
@@ -141,7 +142,9 @@ object DFAssignment {
    * @param commits Commit Dataframe, created from the data_raw.json file.
    * @return the inputted DataFrame appended with a day column.
    */
-  def assignment_4(commits: DataFrame): DataFrame = ???
+  def assignment_4(commits: DataFrame): DataFrame = commits.withColumn("day", stringToDay(col("commit.committer.date")))
+
+  val stringToDay: UserDefinedFunction = udf((s: String) => new SimpleDateFormat("EEE").format(new SimpleDateFormat("yyyy-MM-dd").parse(s.substring(0, 10))))
 
   /**
    *                                            Description
