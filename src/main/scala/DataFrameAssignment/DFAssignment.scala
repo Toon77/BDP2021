@@ -2,7 +2,7 @@ package DataFrameAssignment
 
 import java.sql.Timestamp
 import org.apache.spark.sql.{Column, DataFrame}
-import org.apache.spark.sql.expressions.{UserDefinedFunction, Window}
+import org.apache.spark.sql.expressions.{UserDefinedFunction, Window, WindowSpec}
 import org.apache.spark.sql.functions._
 import utils.{Commit, File}
 
@@ -175,7 +175,15 @@ object DFAssignment {
    * @param committerName Name of the author for which the result must be generated.
    * @return DataFrame with a columns `$oid` , `prev_date`, `date` and `next_date`
    */
-  def assignment_5(commits: DataFrame, committerName: String): DataFrame = ???
+  def assignment_5(commits: DataFrame, committerName: String): DataFrame =
+    commits
+        .filter(col("commit.author.name").equalTo(committerName))
+        .select("_id.$oid", "commit.committer.date")
+        .withColumn("olderDate", org.apache.spark.sql.functions.lag("date", 1).over(windowSpec))
+        .withColumn("newerDate", org.apache.spark.sql.functions.lead("date", 1).over(windowSpec))
+        .select("$oid", "olderDate", "date", "newerDate")
+
+  val windowSpec: WindowSpec = Window.orderBy("date")
 
 
   /**
