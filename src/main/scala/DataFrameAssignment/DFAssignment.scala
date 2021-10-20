@@ -104,13 +104,13 @@ object DFAssignment {
    * @return Dataframe containing 4 columns, Repository name, committer name, year
    *         and the number of commits for a given year.
    */
-  val dateToYear = udf((s: String) => s.substring(0, 4))
+  val dateToYear = udf((s: String) => s.substring(0, 4).toInt)
   val pattern = "((?<=\\/)[^\\/]+(?=\\/commits))".r()
   val urlToRepo = udf((s: String) => pattern findFirstIn s)
   def assignment_3(commits: DataFrame): DataFrame = {
     commits.printSchema()
     val tmp = commits
-        .select("url", "commit.committer.name" ,"commit.committer.date")
+        .select("url", "commit.author.name" ,"commit.committer.date")
         .withColumn("date", dateToYear(col("date")))
         .withColumn("url", urlToRepo(col("url")))
         .groupBy(col("url"), col("name"), col("date"))
