@@ -264,7 +264,14 @@ object DFAssignment {
    * @return DataFrame containing a `repository` column, a `month` column and a `commits_per_month`
    *         representing a count of the total number of commits that that were ever made during that month.
    */
-  def assignment_7(commits: DataFrame): DataFrame = ???
+  def assignment_7(commits: DataFrame): DataFrame = commits
+      .withColumn("repository", urlToRepo(col("url")))
+      .withColumn("month", stringToMonth(col("commit.committer.date")))
+      .withColumn("commits_per_month", count("commit.committer.date").over(windowsSpec3))
+      .select("repository", "month", "commits_per_month")
+
+  def stringToMonth: UserDefinedFunction = udf((s: String) => new SimpleDateFormat("MM").format(new SimpleDateFormat("yyyy-MM-dd").parse(s.substring(0, 10))).toInt)
+  def windowsSpec3: WindowSpec = Window.partitionBy("repository", "month")
 
   /**
    *                                        Description
