@@ -222,22 +222,23 @@ object DFAssignment {
    * @param committerName Name of the author for which the result must be generated.
    * @return DataFrame with columns as described above.
    */
-  def assignment_6(commits: DataFrame, committerName: String): DataFrame =
-    commits
+  def assignment_6(commits: DataFrame, committerName: String): DataFrame = commits
         .filter(col("commit.author.name").equalTo(committerName))
-        .withColumn("olderDate", lag("date", 1).over(windowSpec)) // uses function from last exercise
+        .withColumn("olderDate", lag("commit.committer.date", 1).over(windowSpec2))
         .withColumn("days_diff", days_diff(col("commit.committer.date"), col("olderDate")))
         .withColumn("minutes_diff", minutes_diff(col("commit.committer.date"), col("olderDate")))
-        .select("commit.committer.date", "days_diff", "minutes_diff", "_id.$oid")
+        .select("_id.$oid", "commit.committer.date", "days_diff", "minutes_diff")
 
+  val windowSpec2: WindowSpec = Window.orderBy("commit.committer.date")
   val days_diff: UserDefinedFunction = udf((s1: String, s2: String) => TimeUnit.MILLISECONDS.toDays(millisec_diff(s1, s2)))
-  val minutes_diff: UserDefinedFunction = udf((s1: String, s2: String) => TimeUnit.MILLISECONDS.toDays(millisec_diff(s1, s2)))
+  val minutes_diff: UserDefinedFunction = udf((s1: String, s2: String) => TimeUnit.MILLISECONDS.toMinutes(millisec_diff(s1, s2)))
 
   def millisec_diff(s1: String, s2: String): Long = {
-    val df = new SimpleDateFormat("yyyy-MM-dd")
-    val d1 = df.parse(s1.substring(0, 10))
-    val d2 = df.parse(s2.substring(0, 10))
-    d1.getTime - d2.getTime
+    if (s1 == null || s2 == null) {
+      return 0
+    }
+    val df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
+    df.parse(s1).getTime - df.parse(s2).getTime
   }
 
 
