@@ -32,7 +32,7 @@ object RDDAssignment {
    * @param commits RDD containing commit data.
    * @return Long indicating the number of commits in the given RDD.
    */
-  def assignment_1(commits: RDD[Commit]): Long = ???
+  def assignment_1(commits: RDD[Commit]): Long = commits.count()
 
   /**
    *                                     Description
@@ -49,7 +49,7 @@ object RDDAssignment {
    * @param commits RDD containing commit data.
    * @return RDD containing tuples indicating the email domain (extension) and number of occurrences.
    */
-  def assignment_2(commits: RDD[Commit]): RDD[(String, Long)] = ???
+  def assignment_2(commits: RDD[Commit]): RDD[(String, Long)] = commits.map(x => x.commit.author.email.substring(x.commit.author.email.indexOf("@") + 1)).groupBy(identity).map(x => (x._1, x._2.size))
 
   /**
    *                                        Description
@@ -88,7 +88,7 @@ object RDDAssignment {
    * @param commits RDD containing commit data.
    * @return RDD containing the rank number, commit author names and number of comments of author in order.
    */
-  def assignment_4(commits: RDD[Commit]): RDD[(Long, String, Long)] = ???
+  def assignment_4(commits: RDD[Commit]): RDD[(Long, String, Long)] = commits.groupBy(x => x.commit.author.name).map(x => (x._1, x._2.map(x => x.commit.comment_count).sum)).sortBy(x => x._2).zipWithIndex.map(x => (x._2, x._1._1, x._1._2))
 
   /**
    *                                        Description
