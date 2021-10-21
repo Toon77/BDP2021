@@ -163,6 +163,7 @@ object RDDAssignment {
    */
   def assignment_7(commits: RDD[Commit]): RDD[(String, Double)] = ???
 
+  val pattern = "((?<=\\/)[^\\/]+(?=\\/commits))".r()
   /**
    *
    *                                      Description
@@ -175,9 +176,15 @@ object RDDAssignment {
    * @return RDD of tuple containing committer name, list of repositories and
    * total number of commits committed to that repository.
    */
-  def assignment_8(commits: RDD[Commit]): RDD[(String, Iterable[String], Long)] = ???
+  def assignment_8(commits: RDD[Commit]): RDD[(String, Iterable[String], Long)] = {
+    commits
+      .map(x => (x.commit.committer.name, pattern findFirstIn x.url))
+      .map(x => (x._1, x._2 match {case Some(s) => s}))
+      .groupBy(x => x._1)
+      .map(x => (x._1, x._2.map(y => y._2), x._2.size))
+  }
 
-  val pattern = "((?<=\\/)[^\\/]+(?=\\/commits))".r()
+
   /**
    *                                       Description
    *
