@@ -104,7 +104,17 @@ object RDDAssignment {
    * @param commits RDD containing commit data.
    * @return RDD containing the rank number, commit author names and number of comments of author in order.
    */
-  def assignment_4(commits: RDD[Commit]): RDD[(Long, String, Long)] = commits.groupBy(x => x.commit.author.name).map(x => (x._1, x._2.map(x => x.commit.comment_count).sum)).sortBy(x => x._2).zipWithIndex.map(x => (x._2, x._1._1, x._1._2))
+  def assignment_4(commits: RDD[Commit]): RDD[(Long, String, Long)] = {
+    val tmp = commits
+        .groupBy(x => x.commit.author.name)
+        .map(x => (x._1, x._2.map(x => x.commit.comment_count).sum))
+        .sortBy(x => x._1.toUpperCase(), ascending = true)
+        .sortBy(x => x._2, ascending = false)
+        .zipWithIndex
+        .map(x => (x._2, x._1._1, x._1._2))
+    println(tmp.collect().mkString("Array(", ", ", ")"))
+    tmp
+  }
 
   /**
    *                                        Description
