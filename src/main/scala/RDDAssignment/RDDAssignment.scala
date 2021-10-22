@@ -295,8 +295,11 @@ object RDDAssignment {
       }
       ))
       .flatMap(list => list)
-      .groupBy(x => x._4)
-      .map(x => (x._1, x._2.map(y => (y._5, Stats(y._1, y._2, y._3))).toList))
+      .map(x => (x._4, List((x._1, x._2, x._3, x._5))))
+      .reduceByKey((a: List[(Long, Long, Long, String)], b: List[(Long, Long, Long, String)])
+      => a ::: b
+      )
+      .map(x => (x._1, x._2.map(y => (y._4, Stats(y._1, y._2, y._3)))))
   }
 
 
