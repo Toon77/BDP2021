@@ -1,142 +1,220 @@
-# Assignment: Map-Reduce with Akka Typed
+# Flink Assignment
+In this assignment you will be working with Apache Flink. Make sure you read some of their [documentation](https://flink.apache.org/) before you start.
+For this assignment we are working with GitHub commits as a data source. The raw data can be found in `/data/flink_commits.json` and `/data/flink_commits_geo.json`.
+The data types are defined in the `util.Protocol` class.
 
-In this assignment, we present you with an Actor System implementing a simplified Map-Reduce framework. Your task is to complete the system with correct behaviour in the nodes.
+This assignment is quite challenging, so make sure you start on time.  
 
-## What is Map-Reduce?
+Total amount of points: **100**. 
 
-Map-Reduce is a programming model, is useful for processing batches of large datasets on a cluster. The user-defined "map" operation processes input sets and generates intermediate lists of key-value pairs.
-The Map-Reduce framework sorts and aggregates the intermediate lists, and calls the user-defined "reduce" operation.
-"Reduce" operation merges all related values that are associated with the given intermediate key, producing the output.
+**How to submit:**  
+Make sure you do **NOT** rename the `FlinkAssignment.scala` file nor the method definitions, autograding will fail otherwise. You are not allowed to use more external libraries then given in the template.
+Submit a `zip` folder of your assignment to CPM. Make sure the zip folder only contains the classes and don't use packages. For example:
+```sh
+- wouter_solution.zip
+    FlinkAssignment.scala
+    HelperClass.scala
+```
+Lastly, submissions to CPM for this assignment can take a while to be graded. 
 
-This model was first introduced in 2004 [in this paper](http://static.googleusercontent.com/media/research.google.com/es/us/archive/mapreduce-osdi04.pdf)
-and used in Google extensively, most notably to build the index for World Wide Web.
+## Import template
+We recommend to make use of [IntelliJ IDEA](https://www.jetbrains.com/idea/) for this assignment. As a student you can get a free license. 
+To import the template into IntelliJ: 1) Choose the `Import Project` option and pick the template directory, 2)  Choose `Import project from external model -> Maven`, 3) Choose your JDK. We recommend using JDK `1.8`, 4) Verify that it works by running the main method from the `FlinkAssignment.scala` class.
+ 
+## Contents
 
-## Actor Model and Akka Typed
+- [Basics](#basics)
+    - [Question 1](#question-1-10-points)
+    - [Question 2](#question-2-10-points) 
+- [State](#state) 
+    - [Question 3](#question-3-10-points)
+    - [Question 4](#question-4-10-points)
+- [Windows](#windows) 
+    - [Question 5](#question-5-10-points)
+    - [Question 6](#question-6-10-points)
+    - [Question 7](#question-7-10-points)
+    - [Question 8](#question-8-15-points)
+- [CEP](#cep)
+    - [Question 9](#question-9-15-points)
+    
+## Basics
+In this part of the assignment you are introduced to same basic functionality of Apache Flink. To get a nice introduction, you may want to read [this page](https://ci.apache.org/projects/flink/flink-docs-release-1.9/dev/api_concepts.html) of the Flink documentation.
+### Question 1 (10 points)
 
-The Actor model defines **actor**s to be the primitive units of concurrent computation. Actors can only interact with other actors by sending and receiving **messages** forming an **actor system**. It's not possible to access and/or change the state of other actors - the actor instances are inaccessible. Each actor processes messages serially, one after another.
+Write a Flink application which outputs the **sha** of
+commits with **at least 20** additions.
 
-[Akka](https://akka.io/) is a popular implementation of the actor model of computation in Scala and Java. In Akka, each actor has a partial function called `receive()`. This function accepts any type of message and is effectively the behaviour of the actor. Akka framework enforces communication through messaging with the `ActorRef` class.
+Input: `DataStream[Commit]`  
+Output: `DataStream[String]`  
+Output format: `sha`
+  
+  
+Example output:  
+```
+72e9cfa9bf75a39b22005f68f1f95c29bd82687c
+b5e128c957531aa7d199ff7a9abac8d7e5c0ce7d
+790293312b078063505d8137fcf342a0a34add54
+```
 
-<!-- A drawback of Akka is that it's not possible to verify the message types (also called the "protocol") between any two actors to be correct - not without extensive testing. The `receive()` function is of type `PartialFunction[Any, Unit]` and
-`ActorRef` class is not generic. -->
+---
 
-In this assignment, we will use [Akka Typed](https://doc.akka.io/docs/akka/current/typed/index.html) which extends Akka by specifying the types of input messages,
-making the compiler point out protocol inconsistencies during build time. Typed actors send messages of type `T` with the help of the `ActorRef[T]` class. The actor behaviour has type information too, with the `Behavior[T]` type. Akka Typed library ensures that the generic parameter `T` of `ActorRef[T]` and `Behavior[T]` always match - by providing appropriate,
-generic functions.
+### Question 2 (10 points)
+Write a Flink application which outputs the **names** of the files with
+**more than 30** deletions.  
 
-## Assignment
+Input: `DataStream[Commit]`  
+Output: `DataStream[String]`  
+Output format:  `fileName`
 
-In this assignment, we have a simplified map-reduce framework, similar to the structure in the original [Map-Reduce
-paper](http://static.googleusercontent.com/media/research.google.com/es/us/archive/mapreduce-osdi04.pdf). We implemented
-the WordCount example, which is also presented in the paper. You can find the _map_ and _reduce_ operations in the `wordcount`
-package.
+  
+  
+Example output:  
+```
+file.md
+anotherFile.scala
+anotherAnotherFile.py
+```
 
-The following figure gives an overview of the actors and their tasks in this application:
+## State
+In this part of the assignment we will work with 'state' as explained [here](https://ci.apache.org/projects/flink/flink-docs-stable/dev/stream/state/state.html).
 
-![System Overview](./docs/mr-overview.png)
+### Question 3 (10 points)
+**Count** the occurrences of Java and Scala files. I.e. files ending with either `.scala` or `.java`.  
 
-We model this cluster setup with four types of actors:
+Input: `DataStream[Commit]`  
+Output: `DataStream[(String, Int)]`  
+Output format: `(fileExtension, #occurrences)`
+  
+  
+Example output:
+```
+(java, 1)
+(java, 2)
+(scala, 1)
+(java, 3)
+(scala, 2)
+```
+---
 
-- `MapperNode` actors perform `map` operation.
+### Question 4 (10 points)
+**Count** the total amount of **changes** for each file status (e.g. modified, removed or added) for the following extensions: `.js` and `.py`.  
 
-- `ReducerNode` actors perform `reduce` operation.
+Input: `DataStream[Commit]`  
+Output: `DataStream[(String, String, Int)]`   
+Output format:  `(extension, status, count)`
+  
+  
+Example output:
+```
+(py, modified, 12)
+(py, added, 6)
+(js, added, 10)
+(js, removed, 5)
+(py, modified, 22)
+```
 
-- `Supervisor` actor assigns `map` and `reduce` tasks to the mapper and reducers.
+## Windows
+In this part, you need to work with Flink windows. A good starting point is [this](https://ci.apache.org/projects/flink/flink-docs-release-1.9/dev/event_time.html) and [this](https://ci.apache.org/projects/flink/flink-docs-release-1.9/dev/stream/operators/windows.html) page. As a timestamp for a commit always use the `commit.commit.committer.date` field. Make sure that Flink will use this field!    
 
-- `ClusterMonitor` actor sets up the other actors.
+**For this assignment, you may assume that commits are arriving in-order.**
 
-Note: This representation of actors use the [functional style](https://doc.akka.io/docs/akka/current/typed/style-guide.html#functional-versus-object-oriented-style)
-because it's easier to reference required parameters from the closure context.
+### Question 5 (10 points)
+For **every day** output the amount of commits. Include the timestamp in the following format `dd-MM-yyyy`; e.g. `(26-06-2019, 4)` meaning on the 26th of June 2019 there were 4 commits.  
+Make use of a non-keyed window.   
 
-## Before Starting...
-- TODOs are placed above blocks of code which you are expected to complete.
-- You need to figure out which question corresponds to which TODO (except 3.1 because it's labeled for you).
-- To find TODOs, IntelliJ has a button called TODO at bottom left.
-- **Protip: Invest time in understanding the template provided.**
+Input: `DataStream[Commit]`  
+Output: `DataStream[(String, Int)]`  
+Output format: `(date, count)`
 
-## Assignment 
+Example output:
+```
+(10-03-2019, 3)
+(16-03-2019, 1)
+(18-04-2019, 1)
+```
 
-In this assignment, you will have to figure out what [fire and forget](https://doc.akka.io/docs/akka/current/typed/interaction-patterns.html#fire-and-forget) messages must be exchanged between the `MapperNode`,  `ReducerNode` and `SupervisorNode` and fill them in the program. You can understand the behaviour of the application by looking at the log messages. 
+---
 
-Your solution should follow these communication requirements for each node:
+### Question 6 (10 points)
+Consider two types of commits: **small** commits and **large** commits whereas small: `0 <= x <= 20` and large: `x > 20` where `x = total amount of changes`.
+Compute every **12 hours** the amount of small and large commits in the last **48 hours**.  
 
-1. **Mapper Behavior** _(25 pts)_
+Input: `DataStream[Commit]`  
+Output: `DataStream[(String, Int)]`  
+Output format: `(type, count)` 
 
-   A **Mapper** actor is in the _idle_ state, until the **Supervisor** actor sends a `StartMapper` message. With this message, the **Supervisor** explicitly assigns an input set to process. Then, the mapper node should read the input set line by line, calling the `mapper.map()` method for each line.
+Example output:
+```
+(small,1)
+(small,9)
+(small,11)
+(large,10)
+(large,7)
+```
 
-   **Q1.1. (10 pts)** When the `StartMapper` message arrives, the **Mapper** acknowledges by sending the `MapperStarted` message to the **Supervisor** . Then, the **Mapper** triggers reading the input file by sending itself a `ProcessNextBatch` message. 
+--- 
 
-   **Q1.2. (5 pts)** When the `ProcessNextBatch` message arrives, and there are more lines to process, **Mapper** calls the` mapper.map()` method. If the operation is successful, it triggers reading the rest of the input file by sending itself a `ProcessNextBatch` message. It does only continue if there is no failure in the operation.
+### Question 7 (10 points)
+For each repository compute a **daily commit summary** and output the summaries with **more than** 20 commits and **at most** 2 unique committers. The `CommitSummary` case class is already defined. The fields of this case class:
 
-   **Q1.3. (10 pts)** When **Mapper** processes all lines in the input set, it sends a `MapperFinished` message to the **Supervisor** and goes back to _idle_ state.
+_repo_: name of the repo.  
+_date_: use the start of the window in format `dd-MM-yyyy`.  
+_amountOfCommits_: the number of commits on that day for that repository.  
+_amountOfCommitters_: the amount of unique committers contributing to the repository.  
+_totalChanges_: the sum of total changes in all commits.  
+_topCommitter_: the top committer of that day i.e. with the most commits. **Note** if there are multiple top committers; create a comma separated string sorted alphabetically e.g. `georgios,jeroen,wouter`    
 
-2. **Reducer Behavior** _(25 pts)
-   **Reducer** nodes wait for the completion of all mapper nodes. Then, **Supervisor** should send a `StartReducer` message to every reducer along with the inputs sets designated for each reducer. Different from **Mapper**, **Reducer** has to aggregate all keys from each of the intermediate data sets.
+**Hint**: Write your own ProcessWindowFunction.
 
-	**Reducer** is in the _idle_ state, ignoring all other messages, until a `StartReducer` message arrives.
+Input: `DataStream[Commit]`   
+Output: `DataStream[CommitSummary]`  
+Output format: `CommitSummary`
 
-   **Q2.1. (5 pts)** When the `StartReducer` message arrives, **Reducer** acknowledges by sending a `ReducerStarted` message to the **Supervisor**.
+Example output:
+```
+CommitSummary(codefeedr/codefeedr,26-06-1997,21,4,wzorgdrager)
+CommitSummary(tudelft/bigdata,30-12-2015,40,3,yoshi)
+CommitSummary(tudelft/machinelearning,20-20-2019,66,6,bot)
+```
 
-   **Q2.2. (5 pts)** **Reducer** reads all intermediate sets and collect all values with the same keys. It also sorts these keys.
-It sends `ProcessNextBatch` message to itself to start processing aggregated keys and values.
+---
 
-   **Q2.3. (5 pts)** When the `ProcessNextBatch` message arrives and there is an unprocessed key, **Reducer** calls the` reducer.reduce()` method. Similar to the mapper case, the **Reducer** only continues if there are no errors.
+### Question 8 (15 points)
+For this exercise there is another dataset containing `CommitGeo` events. A CommitGeo event stores the _sha_ of a commit, a _date_ and the _continent_ it was produced in. 
+You can assume that for every commit there is a CommitGeo event arriving within a timeframe of **1 hour before** and **30 minutes after** the commit.
+Get the **weekly** amount of **changes** for the **java** files (.java extension) per **continent**.
 
-   **Q2.4. (10 pts)** When **Reducer** processes all keys and values, it sends a `ReducerFinished` message back to **Supervisor** and goes back to _idle_ state.
+**Hint:** Find the correct join to use!  
 
-3. **Supervisor Behavior** _(35 pts)_
+Input: `DataStream[Commit], DataStream[CommitGeo]`   
+Output: `DataStream[(String, Int)]`  
+Output format: `(continent, amount)`  
 
-   The **Supervisor** actor selects an idle node and sends it a map or reduce task. The **Supervisor** also acts as a channel between the file system and the worker nodes.
+Example output:
+```
+(Asia,309)
+(Oceania,111)
+(South-America,1296)
+(Africa,58)
+```
 
-   The **Supervisor** starts by registering the nodes in an _initializing_ state and moves to the _distributeTasks_ state.
+## CEP
+For the last question you have to make use of the CEP library of Flink. This library is documented [here](https://ci.apache.org/projects/flink/flink-docs-release-1.9/dev/libs/cep.html).
 
-   **Q3.1. (5 pts)** Then the **Supervisor** starts assigning input sets by sending itself `AssignNextTask`. 
-   
-   **Q3.2. (15 pts)** When the `AssignNextTask ` message arrives and there are mapping tasks to dispatch, **Supervisor** assigns an idle mapper a mapping task by sending it a `StartMapper` message with the task parameters. Then, it sends `AssignNextTask ` to itself to assign the next task.
-   
-   **Q3.3. (5 pts)** When a **Mapper** is finishes its task, the **Supervisor** sends `AssignNextTask ` to itself to assign the next task to the **Mapper**.
+### Question 9 (15 points)
+Find all **files** that were added and removed within **one day**.
 
-   **Q3.4. (10 pts)** When the `AssignNextTask ` message arrives and there are no more mapping tasks to dispatch, **Supervisor** assigns reducing tasks to reducer nodes by sending them a `StartReducer` messages with the task parameters. 
-   
-   Then, the **Supervisor** moves to the `SupervisorReduceIntermediates` state. In this state, the intermediate key/value pairs generated by the **Mapper**s are reduced using the particular reduce function.
-   
+**Hint:** Use the Complex Event Processing library (CEP).  
 
-4. **Fault-tolerance** _(15 pts)_
-      
-	The system tolerates faults that may lead to termination of mapper or reducer nodes. If a mapper or reducer actor terminates, these actors are restarted. We configure this while we create the actors on lines 19-20 and 29-30 in `ClusterMonitor.scala`:
-
-	```scala
-	val behavior = Behaviors.supervise(MapperNode(i, nodes.mapperClass, partitions, fileSystem))
-   	         	.onFailure[Exception](SupervisorStrategy.restart)
-	```
-	
-	```scala
-	val behavior = Behaviors.supervise(ReducerNode(i, nodes.reducerClass, fileSystem))
-            .onFailure[Exception](SupervisorStrategy.restart)
-   ```
-
-	In case a **Mapper** or a **Reducer** terminates, the **ClusterMonitor** sends `MapperTerminated` or `ReducerTerminated` message to the **Supervisor** respectively, so that it can restart the terminated tasks.
-
-   **Q4.1. (5 pts)** When the **Supervisor** receives `MapperTerminated` message, it sends `AssignNextTask ` to itself to assign the task to a **Mapper**.
-   
-   **Q4.2. (10 pts)** When the **Supervisor** receives `ReducerTerminated` message, it sends `StarReducer ` message to the itself to assign the task to the **Reducer**.
-
-## Submission
-Zip scala directory to submit on [CPM](https://cpm.ewi.tudelft.nl/logIn.php) the same way as in previous assignments.
-
-## Tools and setup
-* Scala: **2.13.3**
-* Java: **11** (suggested, 11 is minimum)
-
-### IDE
-We recommend using IntelliJ for this assignment. If you do not already have this, you can apply for a student license on the [Jetbrains website](https://www.jetbrains.com/student/) and afterwards download IntelliJ there.
+Input: `DataStream[Commit]`   
+Output: `DataStream[(String, String)]`  
+Output format: `(repository, filename)`
 
 
-### Setup process
-1. Install IntelliJ.
-2. Install the Scala plugin (IntelliJ -> Settings/Preferences -> Plugins -> Marketplace, search for "Scala"). This will restart IntelliJ.
-3. Import the template folder as a Maven project.
-4. You are ready to start working :) 
+Example output:
+```
+(codefeedr/codefeedr, AwesomeButNotSoAwesomeClass.scala)
+(tudelft/bigdata, ThisFileWillBeRemovedWithinOne.day)
+(wouter/coolproject, oops.md)
+```
 
-### CPM Submissions
-Note that CPM considers a grade of 0 as `script dissaproved`. Ignore this warning.

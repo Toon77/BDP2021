@@ -1,6 +1,0 @@
-Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis
-egestas. Aenean bibendum diam orci, sed viverra enim sollicitudin vel. Maecenas sit amet
-luctus odio. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer dignissim lacinia
-libero in vulputate. Ut sodales turpis vel aliquet tempor. Pellentesque egestas eget nisl id
-sagittis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia
-curae; Aliquam ac ligula velit. Proin dictum neque turpis, fermentum ultrices ex elementum eget.
