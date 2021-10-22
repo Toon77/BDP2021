@@ -4,10 +4,11 @@ import java.math.BigInteger
 import java.security.MessageDigest
 import java.sql.Timestamp
 import java.util.UUID
-
 import org.apache.spark.graphx._
 import org.apache.spark.rdd.RDD
 import utils.{Commit, File, Stats}
+
+import scala.util.matching.Regex
 
 /**
  * Hint regarding the exercises: it is sometimes specified that the assignment asks about the committer or the
@@ -166,8 +167,17 @@ object RDDAssignment {
    * @param commits RDD containing commit data.
    * @return RDD of Strings representing the author names that have both committed to and own repositories.
    */
-  def assignment_6(commits: RDD[Commit]): RDD[String] = ???
+  def assignment_6(commits: RDD[Commit]): RDD[String] = {
+    val repoOwners = commits
+        .map(c => (patternRepoOwner findFirstIn c.url).get)
+        .distinct()
+    val committers = commits
+        .map(c => c.commit.author.name)
+        .distinct()
+    repoOwners.intersection(committers) // The intersection
+  }
 
+  val patternRepoOwner: Regex = "((?<=repos\\/).*?(?=\\/))".r()
 
   /**                                       IMPORTANT NOTE!!!!!!
    *
