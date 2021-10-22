@@ -237,10 +237,15 @@ object RDDAssignment {
    */
   def assignment_8(commits: RDD[Commit]): RDD[(String, Iterable[String], Long)] = {
     commits
-      .map(x => (x.commit.committer.name, pattern findFirstIn x.url))
-      .map(x => (x._1, x._2 match {case Some(s) => s}))
-      .groupBy(x => x._1)
-      .map(x => (x._1, x._2.map(y => y._2), x._2.size))
+        .map(x => (x.commit.committer.name, (pattern findFirstIn x.url)))
+        .map(x => (x._1, (List(x._2 match {case Some(s) => s}), 1)))
+        .reduceByKey((acc, n) => {
+          if (acc._1.contains(n._1.head))
+            (acc._1, acc._2 + n._2)
+          else
+            (n._1.head :: acc._1 , acc._2 + n._2)
+        })
+        .map(f => (f._1, f._2._1, f._2._2))
   }
 
 
