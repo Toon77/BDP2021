@@ -262,9 +262,9 @@ object RDDAssignment {
     commits
       .map(x => (pattern findFirstIn x.url, x.commit.author.date, x.commit.author.name))
       .filter(x => x._1.isDefined)
-      .map(x => (x._1 match {case Some(s) => s}, x._2, x._3))
-      .groupBy(x => x._1)
-      .map(x => (x._1, (x._2.map(y => (y._2, y._3)))))
+      .map(x => (x._1 match {case Some(s) => s}, List((x._2, x._3))))
+      .reduceByKey((a: List[(Timestamp, String)], b: List[(Timestamp, String)]) => a ::: b)
+      .map(x => (x._1, x._2.toIterable))
   }
 
 
