@@ -206,7 +206,21 @@ object RDDAssignment {
    * @param commits RDD containing commit data.
    * @return RDD of Tuple type containing a repository name and a double representing the average streak length.
    */
-  def assignment_7(commits: RDD[Commit]): RDD[(String, Double)] = ???
+  def assignment_7(commits: RDD[Commit]): RDD[(String, Double)] = {
+    val tmp = commits
+        .map((c: Commit) => ((pattern findFirstIn c.url).get, (streakCounter(c.commit.message), 1)))
+        .reduceByKey((acc, n) => (acc._1 + n._1, acc._2 + n._2))
+        .map(f => (f._1, f._2._1.toDouble / f._2._2.toDouble))
+    println(tmp.collect().mkString("Array(", ", ", ")"))
+    tmp
+  }
+
+  def streakCounter(commitName: String): Int = {
+    if (commitName.startsWith("Revert")) {
+      return commitName.sliding(6).count((p: String) => p.equals("Revert"))
+    }
+    0
+  }
 
   val pattern = "((?<=\\/)[^\\/]+(?=\\/commits))".r()
   /**
