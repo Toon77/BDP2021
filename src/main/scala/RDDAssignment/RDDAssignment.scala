@@ -78,7 +78,15 @@ object RDDAssignment {
    * @param commits RDD containing commit data.
    * @return A tuple containing the filename and number of changes.
    */
-  def assignment_3(commits: RDD[Commit]): (String, Long) = ???
+  def assignment_3(commits: RDD[Commit]): (String, Long) = {
+    commits
+        .flatMap(c => c.files)
+        .map(f => (f.filename.getOrElse("unknown"), f.changes))
+        .groupBy(f => f._1)
+        .map(f => (f._1, f._2.map(x => x._2).sum))
+        .sortBy(f => f._2, ascending = false)
+        .first()
+  }
 
   /**
    *                                        Description
