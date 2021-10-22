@@ -140,7 +140,16 @@ object RDDAssignment {
    * @param fileExtensions List of String containing file extensions
    * @return RDD containing file extension and an aggregation of the committers' Stats.
    */
-  def assignment_5(commits: RDD[Commit], fileExtensions: List[String]): RDD[(String, Stats)] = ???
+  def assignment_5(commits: RDD[Commit], fileExtensions: List[String]): RDD[(String, Stats)] =
+    commits
+          .flatMap(c => c.files)
+          .map(f => (f.filename.get.substring(f.filename.get.lastIndexOf(".") + 1), (f.changes, f.additions, f.deletions)))
+          .filter(f => fileExtensions.contains(f._1)) // order change?
+          .groupBy(f => f._1)
+          .map(f => (f._1, f._2.foldLeft((0L, 0L, 0L)) {
+            (accumulator, element) => (accumulator._1 + element._2._1, accumulator._2 + element._2._2, accumulator._3 + element._2._3)
+          }))
+          .map(f => (f._1, Stats(f._2._1, f._2._2, f._2._3)))
 
   /**
    *                                        Description
