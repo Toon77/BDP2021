@@ -5,9 +5,9 @@ import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import org.apache.flink.api.scala._
 import org.apache.flink.configuration.Configuration
-import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
+import org.apache.flink.streaming.api.windowing.assigners.{SlidingEventTimeWindows, TumblingEventTimeWindows}
 import org.apache.flink.streaming.api.windowing.time.Time
-import util.Protocol.{Commit, CommitGeo, CommitSummary}
+import util.Protocol.{Commit, CommitGeo, CommitSummary, Stats}
 import util.{CommitGeoParser, CommitParser, Protocol}
 
 import scala.util.matching.Regex
@@ -40,7 +40,7 @@ object FlinkAssignment {
         .map(new CommitGeoParser)
 
     /** Use the space below to print and test your questions. */
-    question_five(commitStream).print()
+    question_six(commitStream).print()
 
     /** Start the streaming environment. **/
     env.execute()
@@ -132,7 +132,17 @@ object FlinkAssignment {
     * Compute every 12 hours the amount of small and large commits in the last 48 hours.
     * Output format: (type, count)
     */
-  def question_six(input: DataStream[Commit]): DataStream[(String, Int)] = ???
+  def question_six(input: DataStream[Commit]): DataStream[(String, Int)] = {
+    input
+        .assignAscendingTimestamps(_.commit.committer.date.getTime)
+        .map(c => c.stats.getOrElse(Stats(0, 0, 0)).total match {
+          case x if x > 20 => ("large", 1)
+          case x => ("small", 1)
+        })
+        .keyBy(_._1)
+        .window(SlidingEventTimeWindows.of(Time.hours(48), Time.hours(12)))
+        .reduce((a, b) => (a._1, a._2 + b._2))
+  }
 
   /**
     * For each repository compute a daily commit summary and output the summaries with more than 20 commits and at most 2 unique committers. The CommitSummary case class is already defined.
