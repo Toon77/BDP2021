@@ -38,7 +38,7 @@ object FlinkAssignment {
         .map(new CommitGeoParser)
 
     /** Use the space below to print and test your questions. */
-    question_three(commitStream).print()
+    question_four(commitStream).print()
 
     /** Start the streaming environment. **/
     env.execute()
@@ -91,8 +91,24 @@ object FlinkAssignment {
     * Count the total amount of changes for each file status (e.g. modified, removed or added) for the following extensions: .js and .py.
     * Output format: (extension, status, count)
     */
-  def question_four(
-      input: DataStream[Commit]): DataStream[(String, String, Int)] = ???
+  def question_four(input: DataStream[Commit]): DataStream[(String, String, Int)] =
+    input
+        .flatMap(_.files)
+        .filter(f => f.filename.getOrElse("unknown").endsWith(".js") || f.filename.getOrElse("unknown").endsWith(".py"))
+        //.filter(f => f.filename.get.endsWith(".py"))
+        .flatMap(f => List(
+          (f.filename.getOrElse("unknown"), "modified", f.changes),
+          (f.filename.getOrElse("unknown"), "removed", f.deletions),
+          (f.filename.getOrElse("unknown"), "added", f.additions)))
+        .filter(f => f._3 > 0)
+        .map(f => (f._1.substring(f._1.lastIndexOf(".") + 1), f._2, f._3))
+        .keyBy(0, 1)
+        .mapWithState((in: (String, String, Int), count: Option[Int]) => {
+          count match {
+            case None => ((in._1, in._2, 0), Some(in._3))
+            case Some(c) => ((in._1, in._2, in._3 + c), Some(in._3 + c))
+          }
+        })
 
   /**
     * For every day output the amount of commits. Include the timestamp in the following format dd-MM-yyyy; e.g. (26-06-2019, 4) meaning on the 26th of June 2019 there were 4 commits.
