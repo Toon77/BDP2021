@@ -1,11 +1,14 @@
-import java.text.SimpleDateFormat
+import org.apache.flink.api.common.state.ValueState
 
+import java.text.SimpleDateFormat
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import org.apache.flink.api.scala._
 import org.apache.flink.configuration.Configuration
 import util.Protocol.{Commit, CommitGeo, CommitSummary}
-import util.{CommitGeoParser, CommitParser}
+import util.{CommitGeoParser, CommitParser, Protocol}
+
+import scala.util.matching.Regex
 
 /** Do NOT rename this class, otherwise autograding will fail. **/
 object FlinkAssignment {
@@ -35,7 +38,7 @@ object FlinkAssignment {
         .map(new CommitGeoParser)
 
     /** Use the space below to print and test your questions. */
-    question_two(commitStream).print()
+    question_three(commitStream).print()
 
     /** Start the streaming environment. **/
     env.execute()
@@ -70,7 +73,19 @@ object FlinkAssignment {
     * Count the occurrences of Java and Scala files. I.e. files ending with either .scala or .java.
     * Output format: (fileExtension, #occurrences)
     */
-  def question_three(input: DataStream[Commit]): DataStream[(String, Int)] = ???
+  def question_three(input: DataStream[Commit]): DataStream[(String, Int)] = {
+    input
+        .flatMap(_.files)
+        .map(f => f.filename.getOrElse("unknown"))
+        .filter(f => f.endsWith(".scala") || f.endsWith(".java"))
+        .map(f => (f.substring(f.lastIndexOf(".") + 1), 1))
+        .keyBy(_._1)
+        .mapWithState((in: (String, Int), count: Option[Int]) =>
+            count match {
+              case Some(c) => ((in._1, c), Some(c + in._2))
+              case None => ((in._1, in._2),  Some(in._2 + 1))
+        })
+  }
 
   /**
     * Count the total amount of changes for each file status (e.g. modified, removed or added) for the following extensions: .js and .py.
